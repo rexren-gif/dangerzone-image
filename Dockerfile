@@ -65,10 +65,14 @@ RUN touch /opt/dangerzone/dangerzone/__init__.py
 # NOTE: Copy the code under `conversion/`, to mimic the old path where
 # Dangerzone looked for files.
 COPY dangerzone_insecure_converter/*.py /opt/dangerzone/dangerzone/conversion/
+RUN chmod -R 755 /opt/dangerzone
+
+RUN echo "/opt/dangerzone" > /usr/lib/python3/dist-packages/dangerzone.pth
 
 # Create a directory that will be used by gVisor as the place where it will
 # store the state of its containers.
-RUN mkdir /home/dangerzone/.containers
+RUN mkdir /home/dangerzone/.containers \
+    && chown -R dangerzone:dangerzone /home/dangerzone
 
 ###############################################################################
 #
@@ -212,13 +216,42 @@ COPY helpers/entrypoint.py /new_root
 # modification time of this file.
 RUN touch -d ${DEBIAN_ARCHIVE_DATE}Z /new_root/entrypoint.py
 
+# Provision a secured, writable workspace for the gVisor state files
+RUN mkdir -p /new_root/var/run/runsc && \
+    chown -R dangerzone:dangerzone /new_root/var/run/runsc
+
+# Copy the custom binary containing your new 'bwrap' subcommand
+COPY helpers/runsc /new_root/home/dangerzone/dangerzone-image/rootfs/usr/bin/runsc
+
+# Grant read and execute permissions to all users
+RUN chmod 755 /new_root/home/dangerzone/dangerzone-image/rootfs/usr/bin/runsc
+
+# Create the Bubblewrap alias pointing to your custom binary
+RUN ln -sf runsc /new_root/home/dangerzone/dangerzone-image/rootfs/usr/bin/bwrap
+
+
 ## Final image
 
 FROM scratch
 
 # Copy the filesystem hierarchy that we created in the previous stage, so that
 # /usr can be a symlink.
-COPY --from=dangerzone-image /new_root/ /
+
+COPY --from=dangerzone-image /bin /bin
+COPY --from=dangerzone-image /sbin /sbin
+COPY --from=dangerzone-image /lib /lib
+COPY --from=dangerzone-image /lib64 /lib64
+COPY --from=dangerzone-image /usr /usr
+COPY --from=dangerzone-image /etc /etc
+COPY --from=dangerzone-image /opt /opt
+COPY --from=dangerzone-image /var /var
+COPY --from=dangerzone-image /home /home
+COPY --from=dangerzone-image /tmp /tmp
+COPY --from=dangerzone-image /run /run
+
+COPY helpers/runsc /usr/bin/runsc
+
+COPY --from=dangerzone-image /new_root/entrypoint.py /entrypoint.py
 
 # Switch to the dangerzone user for the rest of the script.
 USER dangerzone

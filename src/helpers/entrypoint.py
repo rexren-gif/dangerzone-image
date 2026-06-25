@@ -21,7 +21,7 @@ def log(message: str, *values: typing.Any) -> None:
         print(message.format(*values), file=sys.stderr)
 
 
-command = sys.argv[1:] or ["sh"]
+command = sys.argv[1:]
 if len(command) == 0:
     log("Invoked without a command; will execute 'sh'.")
     command = ["sh"]
@@ -45,8 +45,6 @@ bwrap_flags = [
     "--ro-bind",
     "/",
     "/",
-    "--proc",
-    "/proc1",
 ]
 
 mask_dirs = [
@@ -57,6 +55,7 @@ mask_dirs = [
     "/mnt",
     "/root",
     "/run",
+    "/sbin",
     "/srv",
     "/sys",
     "/tmp",
@@ -86,7 +85,7 @@ bwrap_flags += [
     "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "--setenv",
     "PYTHONPATH",
-    "/opt:/opt/dangerzone:/opt/dangerzone/dangerzone",
+    "/opt/dangerzone",
     "--setenv",
     "TERM",
     "xterm",

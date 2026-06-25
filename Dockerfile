@@ -236,22 +236,9 @@ FROM scratch
 
 # Copy the filesystem hierarchy that we created in the previous stage, so that
 # /usr can be a symlink.
-
-COPY --from=dangerzone-image /bin /bin
-COPY --from=dangerzone-image /sbin /sbin
-COPY --from=dangerzone-image /lib /lib
-COPY --from=dangerzone-image /lib64 /lib64
-COPY --from=dangerzone-image /usr /usr
-COPY --from=dangerzone-image /etc /etc
-COPY --from=dangerzone-image /opt /opt
-COPY --from=dangerzone-image /var /var
-COPY --from=dangerzone-image /home /home
-COPY --from=dangerzone-image /tmp /tmp
-COPY --from=dangerzone-image /run /run
+COPY --from=dangerzone-image /new_root/ /
 
 COPY helpers/runsc /usr/bin/runsc
-
-COPY --from=dangerzone-image /new_root/entrypoint.py /entrypoint.py
 
 # Switch to the dangerzone user for the rest of the script.
 USER dangerzone

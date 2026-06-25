@@ -2,12 +2,12 @@
 # Dockerfile args below. For more info about this file, read
 # docs/reproducibility.md.
 
-ARG DEBIAN_IMAGE_DIGEST=sha256:9812458f2932ede726468ba07bcb9e51bceb1f0c7f16ee30baa789ccee7cc202
+ARG DEBIAN_IMAGE_DIGEST=sha256:b6e2a152f22a40ff69d92cb397223c906017e1391a73c952b588e51af8883bf8
 
 FROM docker.io/library/debian@${DEBIAN_IMAGE_DIGEST} AS dangerzone-image
 
-ARG GVISOR_ARCHIVE_DATE=20251110
-ARG DEBIAN_ARCHIVE_DATE=20251118
+ARG GVISOR_ARCHIVE_DATE=20260601
+ARG DEBIAN_ARCHIVE_DATE=20260610
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -32,6 +32,8 @@ RUN \
   : "Install the necessary gVisor and Dangerzone dependencies" && \
   apt-get update && \
   apt-get install -y --no-install-recommends \
+      -o Dpkg::Options::="--path-exclude=/usr/share/doc/*" \
+      -o Dpkg::Options::="--path-exclude=/usr/share/man/*" \
       python3 python3-fitz libreoffice-nogui libreoffice-java-common \
       python3-magic default-jre-headless fonts-noto-cjk fonts-dejavu \
       runsc unzip && \
@@ -42,6 +44,33 @@ RUN \
   dpkg-deb --extract libreoffice-h2orestart_*.deb /tmp/h2orestart && \
   mv /tmp/h2orestart/usr/lib/libreoffice/share/extensions/h2orestart /opt/libreoffice_ext/ && \
   rm -rf /tmp/h2orestart libreoffice-h2orestart_*.deb && \
+  : "Reproducibility utils: strip_path is a way to detect when files to be removed are missing" && \
+  MULTIARCH_DIR=$(echo /usr/lib/*-linux-gnu) && \
+  test -d "${MULTIARCH_DIR}" || { echo "strip: could not locate multiarch lib dir" >&2; exit 1; } && \
+  strip_path() { for p in "$@"; do test -e "$p" || { echo "strip: missing $p" >&2; exit 1; }; rm -rf "$p"; done; } && \
+  : "gVisor: drop some binaries we don't use" && \
+  strip_path \
+      /usr/bin/runsc-metric-server \
+      /usr/bin/containerd-shim-runsc-v1 && \
+  : "Libreoffice: remove import libraries used by libwpftdrawlo.so, whose formats we do not support" && \
+  for lib in libcdr libfreehand libmspub libpagemaker libqxp libvisio libzmf; do \
+    matches=$(ls ${MULTIARCH_DIR}/${lib}-*.so* 2>/dev/null) && \
+    test -n "${matches}" || { echo "strip: no files matched ${lib}-*" >&2; exit 1; } && \
+    rm -f ${MULTIARCH_DIR}/${lib}-*.so*; \
+  done && \
+  : "Libreoffice: drop some GUI artifacts that are never loaded and only keep the default theme (colibre)" && \
+  strip_path \
+      /usr/lib/libreoffice/share/gallery \
+      /usr/lib/libreoffice/share/template \
+      /usr/lib/libreoffice/share/wizards \
+      /usr/lib/libreoffice/share/basic \
+      /usr/lib/libreoffice/share/autotext \
+      /usr/lib/libreoffice/share/autocorr \
+      /usr/share/libreoffice/share/config/images_colibre_dark.zip \
+      /usr/share/libreoffice/share/config/images_colibre_svg.zip \
+      /usr/share/libreoffice/share/config/images_colibre_dark_svg.zip && \
+  : "Drop doc and manpages, not required for this image to function" && \
+  rm -rf /usr/share/doc /usr/share/man && \
   : "Clean up for improving reproducibility (optional)" && \
   rm -rf /var/cache/fontconfig/ && \
   rm -rf /etc/ssl/certs/java/cacerts && \

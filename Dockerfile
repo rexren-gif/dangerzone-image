@@ -94,14 +94,10 @@ RUN touch /opt/dangerzone/dangerzone/__init__.py
 # NOTE: Copy the code under `conversion/`, to mimic the old path where
 # Dangerzone looked for files.
 COPY dangerzone_insecure_converter/*.py /opt/dangerzone/dangerzone/conversion/
-RUN chmod -R 755 /opt/dangerzone
-
-RUN echo "/opt/dangerzone" > /usr/lib/python3/dist-packages/dangerzone.pth
 
 # Create a directory that will be used by gVisor as the place where it will
 # store the state of its containers.
-RUN mkdir /home/dangerzone/.containers \
-    && chown -R dangerzone:dangerzone /home/dangerzone
+RUN mkdir /home/dangerzone/.containers
 
 ###############################################################################
 #

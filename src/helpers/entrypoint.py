@@ -74,7 +74,6 @@ not_forwarded = [
     "PWD",
     "RUNSC_FLAGS",
     "RUNSC_DEBUG",
-    "PYTHONPATH",
 ]
 for var in not_forwarded:
     bwrap_flags += ["--unsetenv", var]
@@ -113,7 +112,7 @@ os.environ["TMPDIR"] = "/home/dangerzone"
 
 runsc_argv += ["bwrap"] + bwrap_flags + ["--"] + command
 
-log("Running gVisor: {}", " ".join(shlex.quote(s) for s in runsc_argv))
-process = subprocess.run(runsc_argv, check=False)
-log("gVisor quit with exit code: {}", process.returncode)
+log("Running gVisor with command line: {}", " ".join(shlex.quote(s) for s in runsc_argv))
+runsc_process = subprocess.run(runsc_argv, check=False)
+log("gVisor quit with exit code: {}", runsc_process.returncode)
 sys.exit(process.returncode)

@@ -50,17 +50,14 @@ bwrap_flags = [
 mask_dirs = [
     "/boot",
     "/dev",
-    "/home",
     "/media",
     "/mnt",
     "/root",
     "/run",
-    "/sbin",
     "/srv",
     "/sys",
     "/tmp",
     "/var",
-    "/usr/lib/libreoffice/share/extensions/",
 ]
 for d in mask_dirs:
     bwrap_flags += ["--tmpfs", d]
@@ -84,7 +81,7 @@ bwrap_flags += [
     "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "--setenv",
     "PYTHONPATH",
-    "/opt/dangerzone",
+    "/home/dangerzone/dangerzone-image/rootfs/opt/dangerzone",
     "--setenv",
     "TERM",
     "xterm",
@@ -107,12 +104,9 @@ if os.environ.get("RUNSC_DEBUG"):
 if os.environ.get("RUNSC_FLAGS"):
     runsc_argv += shlex.split(os.environ.get("RUNSC_FLAGS", ""))
 
-# Direct gVisor to use the persistent home directory for its IPC files
-os.environ["TMPDIR"] = "/home/dangerzone"
-
 runsc_argv += ["bwrap"] + bwrap_flags + ["--"] + command
 
 log("Running gVisor with command line: {}", " ".join(shlex.quote(s) for s in runsc_argv))
 runsc_process = subprocess.run(runsc_argv, check=False)
 log("gVisor quit with exit code: {}", runsc_process.returncode)
-sys.exit(process.returncode)
+sys.exit(runsc_process.returncode)

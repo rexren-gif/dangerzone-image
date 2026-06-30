@@ -6,7 +6,7 @@ ARG DEBIAN_IMAGE_DIGEST=sha256:b6e2a152f22a40ff69d92cb397223c906017e1391a73c952b
 
 FROM docker.io/library/debian@${DEBIAN_IMAGE_DIGEST} AS dangerzone-image
 
-ARG GVISOR_ARCHIVE_DATE=20260601
+ARG GVISOR_ARCHIVE_DATE=20260622
 ARG DEBIAN_ARCHIVE_DATE=20260610
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -241,20 +241,6 @@ COPY helpers/entrypoint.py /new_root
 # modification time of this file.
 RUN touch -d ${DEBIAN_ARCHIVE_DATE}Z /new_root/entrypoint.py
 
-# Provision a secured, writable workspace for the gVisor state files
-RUN mkdir -p /new_root/var/run/runsc && \
-    chown -R dangerzone:dangerzone /new_root/var/run/runsc
-
-# Copy the custom binary containing your new 'bwrap' subcommand
-COPY helpers/runsc /new_root/home/dangerzone/dangerzone-image/rootfs/usr/bin/runsc
-
-# Grant read and execute permissions to all users
-RUN chmod 755 /new_root/home/dangerzone/dangerzone-image/rootfs/usr/bin/runsc
-
-# Create the Bubblewrap alias pointing to your custom binary
-RUN ln -sf runsc /new_root/home/dangerzone/dangerzone-image/rootfs/usr/bin/bwrap
-
-
 ## Final image
 
 FROM scratch
@@ -262,8 +248,6 @@ FROM scratch
 # Copy the filesystem hierarchy that we created in the previous stage, so that
 # /usr can be a symlink.
 COPY --from=dangerzone-image /new_root/ /
-
-COPY helpers/runsc /usr/bin/runsc
 
 # Switch to the dangerzone user for the rest of the script.
 USER dangerzone

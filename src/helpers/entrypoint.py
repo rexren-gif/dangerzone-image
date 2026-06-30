@@ -43,21 +43,24 @@ bwrap_flags = [
     "--unshare-ipc",
     "--unshare-uts",
     "--ro-bind",
-    "/",
+    "/home/dangerzone/dangerzone-image/rootfs",
     "/",
 ]
 
 mask_dirs = [
     "/boot",
     "/dev",
+    "/home",
     "/media",
     "/mnt",
     "/root",
     "/run",
+    "/sbin",
     "/srv",
     "/sys",
     "/tmp",
     "/var",
+    "/usr/lib/libreoffice/share/extensions/",
 ]
 for d in mask_dirs:
     bwrap_flags += ["--tmpfs", d]
@@ -81,7 +84,7 @@ bwrap_flags += [
     "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
     "--setenv",
     "PYTHONPATH",
-    "/home/dangerzone/dangerzone-image/rootfs/opt/dangerzone",
+    "/opt/dangerzone",
     "--setenv",
     "TERM",
     "xterm",

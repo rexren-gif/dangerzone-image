@@ -31,6 +31,8 @@ else:
 # Build and write config using runsc bwrap
 bwrap_flags = [
     "--unshare-user",
+    # Hardcode the UID/GID of the container image to 1000, since we're in
+    # control of the image creation, and we don't expect it to change.
     "--uid",
     "1000",
     "--gid",
@@ -50,6 +52,8 @@ bwrap_flags = [
 mask_dirs = [
     "/boot",
     "/dev",
+    # LibreOffice needs a writable home directory, so just mount a tmpfs
+    # over it.
     "/home",
     "/media",
     "/mnt",
@@ -60,6 +64,8 @@ mask_dirs = [
     "/sys",
     "/tmp",
     "/var",
+    # Used for LibreOffice extensions, which are only conditionally
+        # installed depending on which file is being converted.
     "/usr/lib/libreoffice/share/extensions/",
 ]
 for d in mask_dirs:

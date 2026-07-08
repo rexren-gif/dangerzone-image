@@ -19,6 +19,13 @@ ignore:
   - package:
       name: libgnutls30t64
 
+  # CVE-2026-55200, and other libssh2 CVEs
+  # ======================================
+  # Verdict: libssh2 is used for SSH connections, but the container image is
+  # airgapped, and therefore SSH is not used.
+  - package:
+      name: libssh2-1t64
+
   # CVE-2026-42496, and other perl-base CVEs
   # ========================================
   # Verdict: Vulnerabilities in the perl-base package cannot be used to achieve
@@ -282,3 +289,15 @@ ignore:
   # conversion is handled by LibreOffice. The Debian security team also classifies
   # this as a minor issue (no-dsa).
   - vulnerability: CVE-2026-7210
+
+  # CVE-2026-58016
+  # ==============
+  #
+  # Debian tracker: https://security-tracker.debian.org/tracker/CVE-2026-58016
+  #
+  # There's a parsing issue in Glib regarding D-Bus messages. The impact of this
+  # bug is Denial-of-Service.
+  #
+  # Verdict: Dangerzone is not affected because the D-Bus service is not running
+  # in the container, and the host one does not leak into the container.
+  - vulnerability: CVE-2026-58016
